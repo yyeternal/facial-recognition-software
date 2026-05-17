@@ -1,0 +1,126 @@
+import React from 'react';
+import logo from './logo.svg';
+import './App.css';
+import { useRef, useState, useEffect } from 'react';
+import * as faceapi from 'face-api.js';
+import { AgeAndGenderPrediction } from 'face-api.js';
+
+function FaceDetection() {
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [isWebcamOn, setIsWebcamOn] = useState(false);
+  const [facesData, setFacesData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = "/models";
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+      setModelsLoaded(true);
+    };
+    loadModels();
+  }, []);
+
+  const startWebcam = async () => {
+    if (!modelsLoaded) {
+      alert("Models are still loading. Please wait a moment.");
+      return;
+    }
+    setIsWebcamOn(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+    }
+  };
+
+  const stopWebcam = () => {
+    if (!videoRef.current) return;
+    setIsWebcamOn(false);
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    videoRef.current!.srcObject = null;
+  };
+
+  const detectFaces = async () => {
+    if (!videoRef.current) return;
+    const detections = await faceapi
+      .detectAllFaces(videoRef.current!, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withAgeAndGender();
+
+    setFacesData(detections);
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const displaySize = {
+      width: videoRef.current.videoWidth,
+      height: videoRef.current.videoHeight,
+    };
+    faceapi.matchDimensions(canvas, displaySize);
+    const resizedDetections = faceapi.resizeResults(detections, displaySize);
+    const context = canvas.getContext("2d"); 
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    faceapi.draw.drawDetections(canvas, resizedDetections);
+    faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+  };
+
+  useEffect(() => {
+    let interval: any;
+    if (isWebcamOn) {
+      interval = setInterval(detectFaces, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isWebcamOn]);
+
+  return (
+    <div className="App">
+      <h1 className="Home-heading">Face Detection App</h1>
+      <div className="relative w-full max-w-md">
+        <video ref={videoRef} className="rounded w-full" width="640" height="480" />
+        <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
+      </div>
+      <div className="mt-4">
+        {!isWebcamOn ? (
+          <button className="Home-button" onClick={startWebcam}>
+            Start Webcam
+          </button>
+        ) : (
+          <button className="Home-button" onClick={stopWebcam}>
+            Stop Webcam
+          </button>
+        )}
+      </div>
+      <div className="mt-4 w-full max-w-md">
+        {facesData.map((face, index) => (
+          <div key={index} className="bg-white shadow p-2 rounded mb-2">
+            <p className="Home-letter">
+              <strong>Face {index + 1}:</strong>
+            </p>
+            <p className="Home-letter">
+              <span className="Home-letter">Age:</span>{" "}
+              {face.age.toFixed(0)}
+            </p>
+            <p className="Home-letter">
+              <span className="Home-letter">Gender:</span>{" "}
+              {face.gender}
+            </p>
+            <p className="Home-letter">
+              <span className="Home-letter">Gender Probability:</span>{" "}
+              {(face.genderProbability * 100).toFixed(1)}%
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default FaceDetection;
