@@ -1,9 +1,7 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import { useRef, useState, useEffect } from 'react';
 import * as faceapi from 'face-api.js';
-import { AgeAndGenderPrediction } from 'face-api.js';
 
 function FaceDetection() {
 
