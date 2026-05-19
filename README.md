@@ -9,6 +9,10 @@ I used React and Typescript for type safety for the front end and used TensorFlo
 # Run 
 Download the code and then run npm start, make sure nothing is blocking your webcam and then hit start webcam. 
 
+# Deployment 
+This app was deployed using Vercel. The link can be found here:
+https://facial-recognition-84d390ktg-jonathan-tinti-s-projects.vercel.app/
+
 # Images
 ![Home](Images/Home.png)
 ![Detect](Images/Detect.png)
