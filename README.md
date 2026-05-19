@@ -8,3 +8,7 @@ I used React and Typescript for type safety for the front end and used TensorFlo
 
 # Run 
 Download the code and then run npm start, make sure nothing is blocking your webcam and then hit start webcam. 
+
+# Images
+![Home](Images/Home.png)
+![Detect](Images/Detect.png)
